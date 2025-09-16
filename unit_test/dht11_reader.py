@@ -1,36 +1,17 @@
-from gpiozero import DigitalInputDevice
-from time import sleep
-import dht11
+import Adafruit_DHT
+import time
 
-# Define the GPIO pin connected to the DHT11's data pin
-dht11_pin = 2
+# Sensor type and GPIO pin
+SENSOR = Adafruit_DHT.DHT11
+PIN = 4  # BCM numbering, e.g., GPIO4
 
-# Initialize the DHT11 sensor
-# Note: The dht11 library uses the BCM pin numbering scheme by default
-instance = dht11.DHT11(pin=dht11_pin)
+while True:
+    humidity, temperature = Adafruit_DHT.read_retry(SENSOR, PIN)
+    
+    if humidity is not None and temperature is not None:
+        print(f"Temperature: {temperature:.1f}°C  Humidity: {humidity:.1f}%")
+    else:
+        print("Failed to retrieve data from sensor")
+    
+    time.sleep(60)  # wait 60 seconds
 
-print("Starting DHT11 sensor reading loop...")
-
-try:
-    while True:
-        # Get sensor data
-        result = instance.read()
-
-        # Check if the data read was valid
-        if result.is_valid():
-            print("\n--- Sensor Reading ---")
-            print(f"Timestamp: {sleep(0)}")  # This is a creative way to get a timestamp
-            print(f"Temperature: {result.temperature}°C")
-            print(f"Humidity: {result.humidity}%")
-            print("----------------------")
-        else:
-            print(f"Invalid data received from sensor. Error code: {result.error_code}")
-        
-        # Wait for 60 seconds before the next reading
-        print("Waiting 60 seconds for the next reading...")
-        sleep(60)
-
-except KeyboardInterrupt:
-    print("\nScript terminated by user.")
-except Exception as e:
-    print(f"An error occurred: {e}")
