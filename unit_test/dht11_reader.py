@@ -1,38 +1,36 @@
-# First, install the necessary libraries:
-# pip3 install adafruit-blinka
-# pip3 install adafruit-circuitpython-dht
-
-import adafruit_dht
-import board
+from gpiozero import DigitalInputDevice
 from time import sleep
+import dht11
 
-# Define the GPIO pin connected to the DHT sensor
-# This example uses GPIO 4. Adjust as needed.
-dht_pin = board.D4
+# Define the GPIO pin connected to the DHT11's data pin
+dht11_pin = 2
 
-# Create a DHT11 sensor object
-# For DHT22, change adafruit_dht.DHT11 to adafruit_dht.DHT22
-dht_device = adafruit_dht.DHT11(dht_pin, use_pulseio=False)
+# Initialize the DHT11 sensor
+# Note: The dht11 library uses the BCM pin numbering scheme by default
+instance = dht11.DHT11(pin=dht11_pin)
+
+print("Starting DHT11 sensor reading loop...")
 
 try:
     while True:
-        try:
-            # Read the temperature and humidity
-            temperature_c = dht_device.temperature
-            humidity_p = dht_device.humidity
+        # Get sensor data
+        result = instance.read()
 
-            if temperature_c is not None and humidity_p is not None:
-                print(f"Temperature: {temperature_c:.1f}°C")
-                print(f"Humidity: {humidity_p:.1f}%")
-            else:
-                print("Failed to read from sensor. Retrying...")
-
-        except RuntimeError as error:
-            # Errors happen, but don't stop the script.
-            print(error.args[0])
-
+        # Check if the data read was valid
+        if result.is_valid():
+            print("\n--- Sensor Reading ---")
+            print(f"Timestamp: {sleep(0)}")  # This is a creative way to get a timestamp
+            print(f"Temperature: {result.temperature}°C")
+            print(f"Humidity: {result.humidity}%")
+            print("----------------------")
+        else:
+            print(f"Invalid data received from sensor. Error code: {result.error_code}")
+        
         # Wait for 60 seconds before the next reading
+        print("Waiting 60 seconds for the next reading...")
         sleep(60)
 
 except KeyboardInterrupt:
-    print("Script terminated by user.")
+    print("\nScript terminated by user.")
+except Exception as e:
+    print(f"An error occurred: {e}")
