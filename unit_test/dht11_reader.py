@@ -3,7 +3,7 @@ import time
 
 # Sensor type and GPIO pin
 SENSOR = Adafruit_DHT.DHT11
-PIN = 4  # BCM numbering, e.g., GPIO4
+PIN = 15  # BCM numbering, e.g., GPIO4
 
 while True:
     humidity, temperature = Adafruit_DHT.read_retry(SENSOR, PIN)

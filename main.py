@@ -10,7 +10,7 @@ from time import sleep
 # DHT11 Sensor Setup
 # ---------------------------
 SENSOR = Adafruit_DHT.DHT11
-DHT_PIN = 15  # BCM pin number for DHT11 data pin
+DHT_PIN = 4  # BCM pin number for DHT11 data pin
 
 # Morse code dictionary
 morse_code_dict = {
@@ -29,17 +29,6 @@ element_space = dot_time
 char_space = dot_time * 3
 word_space = dot_time * 7
 
-def kabot_running(buzzer, element):
-	print("kabot is not running")
-	tone frequency = 500
-	if element == '.':
-		buzzer.play (Tone(tone_frequency))
-		sleep(dot_time)
-	elif element == '_':
-		buzzer.play(Tone(tone_frequency))
-		sleep(dash_time)
-	buzzer.stop()
-	sleep(element_space)
 # ---------------------------
 # Functions
 # ---------------------------
@@ -76,7 +65,7 @@ def play_morse_code(message, buzzer_pin):
 # Main Loop
 # ---------------------------
 message_to_play = "ZR6BN"
-buzzer_pin = 4
+buzzer_pin = 14
 
 try:
     while True:
@@ -103,4 +92,17 @@ finally:
     print("Script finished.")
 
 
+# A simple loop to keep the script from exiting.
+if __name__ == "__main__":
+    print("Kabot is running!")
+    try:
+        while True:
+            # Your main program logic goes here
+            # For example: read sensor data, log to file, etc.
+            print("Kabot is still alive...")
+            time.sleep(10)  # Sleep for 10 seconds to avoid high CPU usage
 
+    except KeyboardInterrupt:
+        # Gracefully exit on Ctrl+C (not relevant for a payload, but good practice)
+        print("Kabot is stopping...")
+        sys.exit(0)
