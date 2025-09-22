@@ -2,10 +2,11 @@ import time
 import datetime
 import matplotlib.pyplot as plt
 import zerogpio as gpio
+import numpy as np
 
 # Pin assignments (BCM numbering)
-DOUT_PIN = 23     # Sound sensor DOUT
-BUZZER_PIN = 18   # Buzzer control pin
+DOUT_PIN = 14     # Sound sensor DOUT
+BUZZER_PIN = 4   # Buzzer control pin
 
 # Sampling parameters
 BURST_DURATION = 2.0      # seconds
