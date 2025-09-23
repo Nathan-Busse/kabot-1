@@ -7,7 +7,7 @@ import shutil
 
 # Sensor settings
 DHT_SENSOR = Adafruit_DHT.DHT11
-DHT_PIN = 4
+DHT_PIN =  21
 
 # File paths
 DATA_FILE = "DHT11.txt"
