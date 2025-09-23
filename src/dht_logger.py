@@ -7,8 +7,8 @@ import shutil
 
 # Sensor settings
 DHT_SENSOR = Adafruit_DHT.DHT11
-# The pin is set to GPIO14 as per your setup
-DHT_PIN = 4
+# The pin is set to GPIO4 (GPCLK0) for improved accuracy
+DHT_PIN = 4 
 
 # File paths
 DATA_FILE = "DHT11.txt"
@@ -52,7 +52,7 @@ def main_loop():
             else:
                 print("Failed to retrieve data from DHT11 sensor.")
             
-            time.sleep(100)
+            time.sleep(10)
             
     except KeyboardInterrupt:
         print("\nExiting program.")
