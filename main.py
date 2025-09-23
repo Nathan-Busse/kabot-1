@@ -10,7 +10,7 @@ from time import sleep
 # DHT11 Sensor Setup
 # ---------------------------
 SENSOR = Adafruit_DHT.DHT11
-DHT_PIN = 4  # BCM pin number for DHT11 data pin
+DHT_PIN = 21  # BCM pin number for DHT11 data pin
 
 # Morse code dictionary
 morse_code_dict = {
@@ -65,7 +65,7 @@ def play_morse_code(message, buzzer_pin):
 # Main Loop
 # ---------------------------
 message_to_play = "ZR6BN"
-buzzer_pin = 14
+buzzer_pin =  4
 
 try:
     while True:
