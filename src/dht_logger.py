@@ -16,6 +16,10 @@ DATA_BACKUP_FILE = "DHT11_backup.txt"
 CHART_FILE = "chart.svg"
 CHART_BACKUP_FILE = "chart_backup.svg"
 
+# Chart settings
+# Only plot the last 120 data points (20 minutes at 10 second intervals)
+MAX_CHART_POINTS = 120
+
 def main():
     # --- Critical file existence and creation check ---
     if not os.path.exists(DATA_FILE):
@@ -35,20 +39,23 @@ def main_loop():
             humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
             
             if humidity is not None and temperature is not None:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-                # --- Step 1: Backup the existing data file ---
-                if os.path.exists(DATA_FILE):
-                    shutil.copyfile(DATA_FILE, DATA_BACKUP_FILE)
-                
-                # --- Step 2: Append new data to the main file ---
-                with open(DATA_FILE, "a") as f:
-                    f.write(f"{timestamp},{temperature},{humidity}\n")
-                
-                print(f"Logged: {timestamp} | Temp: {temperature}°C | Hum: {humidity}%")
-                
-                generate_chart()
-                
+                # Validate the humidity reading to ensure it's within the sensor's range (20-90%)
+                if 20 <= humidity <= 90:
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # --- Step 1: Backup the existing data file ---
+                    if os.path.exists(DATA_FILE):
+                        shutil.copyfile(DATA_FILE, DATA_BACKUP_FILE)
+                    
+                    # --- Step 2: Append new data to the main file ---
+                    with open(DATA_FILE, "a") as f:
+                        f.write(f"{timestamp},{temperature},{humidity}\n")
+                    
+                    print(f"Logged: {timestamp} | Temp: {temperature}°C | Hum: {humidity}%")
+                    
+                    generate_chart()
+                else:
+                    print(f"Invalid humidity reading: {humidity}%. Data not logged.")
             else:
                 print("Failed to retrieve data from DHT11 sensor.")
             
@@ -75,6 +82,12 @@ def generate_chart():
     if not dates:
         return
     
+    # Trim the data to only include the last N points for the chart
+    if len(dates) > MAX_CHART_POINTS:
+        dates = dates[-MAX_CHART_POINTS:]
+        temps = temps[-MAX_CHART_POINTS:]
+        hums = hums[-MAX_CHART_POINTS:]
+    
     # Create the Matplotlib figure
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -91,6 +104,9 @@ def generate_chart():
     ax2.set_ylabel('Humidity (%)', color=color)
     ax2.plot(dates, hums, color=color, label='Humidity')
     ax2.tick_params(axis='y', labelcolor=color)
+    
+    # Explicitly set the y-axis limits for humidity to a sensible range
+    ax2.set_ylim(0, 100)
 
     plt.gcf().autofmt_xdate()
     
@@ -107,4 +123,3 @@ def generate_chart():
 
 if __name__ == "__main__":
     main()
-
