@@ -7,7 +7,8 @@ import shutil
 
 # Sensor settings
 DHT_SENSOR = Adafruit_DHT.DHT11
-DHT_PIN =  21
+# The pin is set to GPIO14 as per your setup
+DHT_PIN = 14
 
 # File paths
 DATA_FILE = "DHT11.txt"
@@ -106,4 +107,3 @@ def generate_chart():
 
 if __name__ == "__main__":
     main()
-
