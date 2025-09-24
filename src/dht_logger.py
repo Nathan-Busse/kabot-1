@@ -13,9 +13,10 @@ DHT_SENSOR = Adafruit_DHT.DHT11
 # The pin is set to GPIO4 (GPCLK0) for improved accuracy
 DHT_PIN = 4 
 
-# File paths
-DATA_FILE = "DHT11.txt"
-DATA_BACKUP_FILE = "DHT11_backup.txt"
+# Directory for data files
+DATA_DIR = "data"
+DATA_FILE = os.path.join(DATA_DIR, "DHT11.txt")
+DATA_BACKUP_FILE = os.path.join(DATA_DIR, "DHT11_backup.txt")
 
 # Directory for charts
 CHARTS_DIR = "charts"
@@ -33,6 +34,10 @@ SCRIPT_START_TIME = datetime.now()
 
 def main():
     """Main function to run the sensor logging loop."""
+    # === Create the data directory if it doesn't exist ===
+    print(f"Ensuring directory '{DATA_DIR}' exists...")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    
     # --- Critical file existence and creation check ---
     if not os.path.exists(DATA_FILE):
         print(f"Data file not found. Creating {DATA_FILE}...")
