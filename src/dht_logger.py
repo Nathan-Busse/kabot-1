@@ -25,6 +25,9 @@ MAX_CHART_POINTS = 120
 # Number of points for the moving average calculation
 MOVING_AVG_POINTS = 5
 
+# Store the start time of the script to calculate total runtime
+SCRIPT_START_TIME = datetime.now()
+
 def main():
     """Main function to run the sensor logging loop."""
     # --- Critical file existence and creation check ---
@@ -70,6 +73,12 @@ def main_loop():
             
     except KeyboardInterrupt:
         print("\nExiting program.")
+        end_time = datetime.now()
+        duration = end_time - SCRIPT_START_TIME
+        print(f"Script started at: {SCRIPT_START_TIME.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Script ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Total runtime: {duration}")
+
 
 def generate_chart():
     """
@@ -107,10 +116,23 @@ def generate_chart():
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax1 = plt.subplots(figsize=(10, 6))
     
-    # Set a more descriptive title
-    start_time = dates[0].strftime("%H:%M")
-    end_time = dates[-1].strftime("%H:%M")
-    ax1.set_title(f"DHT11 Readings: {start_time} to {end_time}")
+    # === UPDATED TITLE TO INCLUDE FLIGHT DURATION ===
+    end_time = dates[-1] if dates else datetime.now()
+    duration = end_time - SCRIPT_START_TIME
+    
+    total_hours = duration.seconds // 3600
+    total_minutes = (duration.seconds % 3600) // 60
+    total_seconds = duration.seconds % 60
+    
+    duration_str = f"{total_hours:02d}h {total_minutes:02d}m {total_seconds:02d}s"
+    
+    title_str = (
+        f"DHT11 Readings: "
+        f"Start: {SCRIPT_START_TIME.strftime('%Y-%m-%d %H:%M:%S')} | "
+        f"End: {end_time.strftime('%Y-%m-%d %H:%M:%S')} | "
+        f"Duration: {duration_str}"
+    )
+    ax1.set_title(title_str)
     
     # Add a grid for better readability and precision
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -135,8 +157,6 @@ def generate_chart():
     
     # Explicitly set the y-axis limits for humidity to a sensible range
     ax2.set_ylim(0, 100)
-
-    # === BEGIN ENHANCEMENTS FOR DATA ANALYTICS ===
     
     # Add a moving average line for temperature
     if len(temps) >= MOVING_AVG_POINTS:
@@ -164,8 +184,6 @@ def generate_chart():
         ax2.plot(dates[min_hum_idx], hums[min_hum_idx], marker='o', color='darkblue', markersize=8, label='Min Hum')
         ax2.annotate(f'{hums[max_hum_idx]:.1f}%', xy=(dates[max_hum_idx], hums[max_hum_idx]), xytext=(5,-10), textcoords='offset points', ha='center')
         ax2.annotate(f'{hums[min_hum_idx]:.1f}%', xy=(dates[min_hum_idx], hums[min_hum_idx]), xytext=(5,10), textcoords='offset points', ha='center')
-
-    # === END ENHANCEMENTS ===
 
     lines, labels = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
