@@ -68,13 +68,15 @@ def main_loop():
                     with open(DATA_FILE, "a") as f:
                         f.write(f"{timestamp},{temperature},{humidity}\n")
                     
-                    print(f"Logged: {timestamp} | Temp: {temperature}°C | Hum: {humidity}%")
+                    # === UPDATED PRINT STATEMENT ===
+                    # Use \r to return to the start of the line and overwrite the previous output
+                    print(f"\rLogged: {timestamp} | Temp: {temperature}°C | Hum: {humidity}%", end="", flush=True)
                     
                     generate_chart()
                 else:
-                    print(f"Invalid humidity reading: {humidity}%. Data not logged.")
+                    print(f"\rInvalid humidity reading: {humidity}%. Data not logged.", end="", flush=True)
             else:
-                print("Failed to retrieve data from DHT11 sensor.")
+                print("\rFailed to retrieve data from DHT11 sensor.", end="", flush=True)
             
             time.sleep(10)
             
@@ -205,4 +207,3 @@ def generate_chart():
 
 if __name__ == "__main__":
     main()
-
