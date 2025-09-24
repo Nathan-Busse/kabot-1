@@ -16,8 +16,11 @@ DHT_PIN = 4
 # File paths
 DATA_FILE = "DHT11.txt"
 DATA_BACKUP_FILE = "DHT11_backup.txt"
-CHART_FILE = "chart.svg"
-CHART_BACKUP_FILE = "chart_backup.svg"
+
+# Directory for charts
+CHARTS_DIR = "charts"
+CHART_FILE = os.path.join(CHARTS_DIR, "chart.svg")
+CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "chart_backup.svg")
 
 # Chart settings
 # Only plot the last 120 data points (20 minutes at 10 second intervals)
@@ -39,6 +42,10 @@ def main():
         except Exception as e:
             print(f"Error creating file: {e}")
             return # Exit if file cannot be created
+    
+    # === Create the charts directory if it doesn't exist ===
+    print(f"Ensuring directory '{CHARTS_DIR}' exists...")
+    os.makedirs(CHARTS_DIR, exist_ok=True)
     
     main_loop()
 
