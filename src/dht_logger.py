@@ -6,6 +6,7 @@ import os
 import shutil
 import matplotlib.dates as mdates
 import numpy as np
+from collections import deque
 
 # Sensor settings
 DHT_SENSOR = Adafruit_DHT.DHT11
@@ -25,6 +26,7 @@ MAX_CHART_POINTS = 120
 MOVING_AVG_POINTS = 5
 
 def main():
+    """Main function to run the sensor logging loop."""
     # --- Critical file existence and creation check ---
     if not os.path.exists(DATA_FILE):
         print(f"Data file not found. Creating {DATA_FILE}...")
@@ -38,6 +40,7 @@ def main():
     main_loop()
 
 def main_loop():
+    """Continuously reads sensor data and logs it."""
     try:
         while True:
             humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
@@ -69,28 +72,36 @@ def main_loop():
         print("\nExiting program.")
 
 def generate_chart():
-    # Read all data from the file
+    """
+    Generates an updated chart from the most recent data.
+    This function is optimized to read only the last N lines,
+    preventing high memory usage on the Raspberry Pi.
+    """
+    # Read only the last N lines from the file using deque for memory efficiency
     dates, temps, hums = [], [], []
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            next(f)
-            for line in f:
-                try:
-                    timestamp_str, temp_str, hum_str = line.strip().split(',')
-                    dates.append(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
-                    temps.append(float(temp_str))
-                    hums.append(float(hum_str))
-                except (ValueError, IndexError):
-                    continue
+        try:
+            with open(DATA_FILE, "r") as f:
+                # Use deque to get the last N lines without loading the entire file
+                last_lines = deque(f, MAX_CHART_POINTS + 1)
+                # Skip the header line if it's present in the last lines
+                if last_lines and "timestamp" in last_lines[0]:
+                    last_lines.popleft()
+                
+                for line in last_lines:
+                    try:
+                        timestamp_str, temp_str, hum_str = line.strip().split(',')
+                        dates.append(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
+                        temps.append(float(temp_str))
+                        hums.append(float(hum_str))
+                    except (ValueError, IndexError):
+                        continue
+        except Exception as e:
+            print(f"Error reading data file for chart generation: {e}")
+            return
 
     if not dates:
         return
-    
-    # Trim the data to only include the last N points for the chart
-    if len(dates) > MAX_CHART_POINTS:
-        dates = dates[-MAX_CHART_POINTS:]
-        temps = temps[-MAX_CHART_POINTS:]
-        hums = hums[-MAX_CHART_POINTS:]
     
     # Create the Matplotlib figure
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -128,12 +139,14 @@ def generate_chart():
     # === BEGIN ENHANCEMENTS FOR DATA ANALYTICS ===
     
     # Add a moving average line for temperature
-    temp_ma = np.convolve(temps, np.ones(MOVING_AVG_POINTS)/MOVING_AVG_POINTS, mode='valid')
-    ax1.plot(dates[len(dates)-len(temp_ma):], temp_ma, color='darkred', linestyle='--', label=f'{MOVING_AVG_POINTS}-Point Avg Temp')
+    if len(temps) >= MOVING_AVG_POINTS:
+        temp_ma = np.convolve(temps, np.ones(MOVING_AVG_POINTS)/MOVING_AVG_POINTS, mode='valid')
+        ax1.plot(dates[len(dates)-len(temp_ma):], temp_ma, color='darkred', linestyle='--', label=f'{MOVING_AVG_POINTS}-Point Avg Temp')
     
     # Add a moving average line for humidity
-    hum_ma = np.convolve(hums, np.ones(MOVING_AVG_POINTS)/MOVING_AVG_POINTS, mode='valid')
-    ax2.plot(dates[len(dates)-len(hum_ma):], hum_ma, color='darkblue', linestyle='--', label=f'{MOVING_AVG_POINTS}-Point Avg Hum')
+    if len(hums) >= MOVING_AVG_POINTS:
+        hum_ma = np.convolve(hums, np.ones(MOVING_AVG_POINTS)/MOVING_AVG_POINTS, mode='valid')
+        ax2.plot(dates[len(dates)-len(hum_ma):], hum_ma, color='darkblue', linestyle='--', label=f'{MOVING_AVG_POINTS}-Point Avg Hum')
     
     # Find and highlight the max and min points
     if temps:
