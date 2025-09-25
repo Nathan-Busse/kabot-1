@@ -23,9 +23,6 @@ CHARTS_DIR = "charts"
 CHART_FILE = os.path.join(CHARTS_DIR, "chart.svg")
 CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "chart_backup.svg")
 
-# Chart settings
-# Only plot the last 120 data points (20 minutes at 10 second intervals)
-MAX_CHART_POINTS = 120
 # Number of points for the moving average calculation
 MOVING_AVG_POINTS = 5
 
@@ -77,7 +74,6 @@ def main_loop():
                     # Use \r to return to the start of the line and overwrite the previous output
                     print(f"\rLogged: {timestamp} | Temp: {temperature}°C | Hum: {humidity}%", end="", flush=True)
                     
-                    generate_chart()
                 else:
                     print(f"\rInvalid humidity reading: {humidity}%. Data not logged.", end="", flush=True)
             else:
@@ -93,25 +89,27 @@ def main_loop():
         print(f"Script ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Total runtime: {duration}")
 
+        # === Generate the final chart using all data from the log file ===
+        print("Generating final chart from all logged data...")
+        generate_chart()
+
 
 def generate_chart():
     """
-    Generates an updated chart from the most recent data.
-    This function is optimized to read only the last N lines,
-    preventing high memory usage on the Raspberry Pi.
+    Generates an updated chart from all logged data.
+    This function is called once upon script termination.
     """
-    # Read only the last N lines from the file using deque for memory efficiency
     dates, temps, hums = [], [], []
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r") as f:
-                # Use deque to get the last N lines without loading the entire file
-                last_lines = deque(f, MAX_CHART_POINTS + 1)
-                # Skip the header line if it's present in the last lines
-                if last_lines and "timestamp" in last_lines[0]:
-                    last_lines.popleft()
+                # Read all lines from the file
+                lines = f.readlines()
+                # Skip the header line if it exists
+                if lines and "timestamp" in lines[0]:
+                    lines = lines[1:]
                 
-                for line in last_lines:
+                for line in lines:
                     try:
                         timestamp_str, temp_str, hum_str = line.strip().split(',')
                         dates.append(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
@@ -124,6 +122,7 @@ def generate_chart():
             return
 
     if not dates:
+        print("No data to plot.")
         return
     
     # Create the Matplotlib figure
@@ -212,3 +211,4 @@ def generate_chart():
 
 if __name__ == "__main__":
     main()
+
