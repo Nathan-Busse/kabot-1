@@ -12,12 +12,12 @@ import numpy as np
 from scipy.signal import savgol_filter
 import os
 
-# Configuration settings (Paths are relative to src/plotter)
-# Data is located at ../logger/data
-DATA_DIR = "../logger/data"
+# Configuration settings (PATHS ARE NOW RELATIVE TO THE PROJECT ROOT, where blackbox.sh is run)
+# Data is located at src/logger/data
+DATA_DIR = "src/logger/data"
 DATA_FILE = os.path.join(DATA_DIR, "MPU6050.txt")
-# Charts are located at ../charts
-CHARTS_DIR = "../charts"
+# Charts are located at src/charts
+CHARTS_DIR = "src/charts"
 CHART_FILE = os.path.join(CHARTS_DIR, "mpu6050_chart.svg")
 CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "mpu6050_chart_backup.svg")
 
