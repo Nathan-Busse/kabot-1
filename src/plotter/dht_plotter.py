@@ -14,12 +14,12 @@ import numpy as np
 from scipy.signal import savgol_filter
 import os
 
-# Configuration settings (Paths are relative to src/plotter)
-# Data is located at ../logger/data
-DATA_DIR = "../logger/data"
+# Configuration settings (PATHS ARE NOW RELATIVE TO THE PROJECT ROOT, where blackbox.sh is run)
+# Data is located at src/logger/data
+DATA_DIR = "src/logger/data"
 DATA_FILE = os.path.join(DATA_DIR, "DHT11.txt")
-# Charts are located at ../charts
-CHARTS_DIR = "../charts"
+# Charts are located at src/charts
+CHARTS_DIR = "src/charts"
 CHART_FILE = os.path.join(CHARTS_DIR, "chart.svg")
 CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "chart_backup.svg")
 
@@ -29,6 +29,7 @@ def generate_chart():
 
     # === Step 1: Read all data from the mission log file ===
     if not os.path.exists(DATA_FILE):
+        # NOTE: The path printed here is now relative to the root, which is correct.
         print(f"Error: Mission data file not found at {DATA_FILE}")
         print("Please ensure the data file has been transferred from the Kabot-1 payload.")
         return
@@ -127,3 +128,4 @@ def generate_chart():
 
 if __name__ == "__main__":
     generate_chart()
+
