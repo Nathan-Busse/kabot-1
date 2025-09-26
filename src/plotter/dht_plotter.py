@@ -3,8 +3,8 @@
 # =========================================================================
 # This script is run *after* the payload has been retrieved and the log
 # file (data/DHT11.txt) has been transferred to a powerful machine.
-# It uses the full dataset to generate the final, high-fidelity mission
-# chart using resource-intensive libraries like Matplotlib and SciPy.
+# It reads the entire mission log to generate the final, high-fidelity 
+# mission chart using resource-intensive libraries.
 # =========================================================================
 
 import matplotlib.pyplot as plt
@@ -14,10 +14,12 @@ import numpy as np
 from scipy.signal import savgol_filter
 import os
 
-# Configuration settings (Must match dht_logger.py's directory structure)
-DATA_DIR = "data"
+# Configuration settings (Paths are relative to src/plotter)
+# Data is located at ../logger/data
+DATA_DIR = "../logger/data"
 DATA_FILE = os.path.join(DATA_DIR, "DHT11.txt")
-CHARTS_DIR = "charts"
+# Charts are located at ../charts
+CHARTS_DIR = "../charts"
 CHART_FILE = os.path.join(CHARTS_DIR, "chart.svg")
 CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "chart_backup.svg")
 
