@@ -2,7 +2,7 @@
 # Kabot-1 Mission Control and Post-Flight Data Analysis Launcher
 # =========================================================================
 # This script provides a simple menu interface for managing post-flight
-# tasks, specifically running the resource-intensive data plotting script
+# tasks, specifically running the resource-intensive data plotting scripts
 # and viewing the results.
 #
 # NOTE: This script is intended to be run on the ground station (PC)
@@ -10,8 +10,12 @@
 # =========================================================================
 
 PYTHON_EXECUTABLE="python3"
-PLOTTER_SCRIPT="src/plotter/dht_plotter.py"
-CHART_PATH="src/charts/chart.svg"
+
+# Define script and chart paths
+DHT_PLOTTER_SCRIPT="src/plotter/dht_plotter.py"
+MPU_PLOTTER_SCRIPT="src/plotter/mpu_plotter.py"
+DHT_CHART_PATH="src/charts/chart.svg"
+MPU_CHART_PATH="src/charts/mpu6050_chart.svg"
 
 # Function to check for required dependencies
 check_dependencies() {
@@ -33,15 +37,28 @@ check_dependencies() {
 generate_dht_chart() {
     echo ""
     echo "================================================="
-    echo " Starting DHT Chart Generation (Post-Flight Analysis)"
+    echo " Starting DHT Chart Generation (Temp/Hum)"
     echo "================================================="
-    
-    # Run the Python plotting script
-    $PYTHON_EXECUTABLE $PLOTTER_SCRIPT
-    
+    $PYTHON_EXECUTABLE $DHT_PLOTTER_SCRIPT
     if [ $? -eq 0 ]; then
         echo ""
-        echo "Chart generation successful! File saved to $CHART_PATH"
+        echo "Chart generation successful! File saved to $DHT_CHART_PATH"
+    else
+        echo ""
+        echo "Chart generation failed. Check the error messages above."
+    fi
+}
+
+# Function to run the MPU Plotter script
+generate_mpu_chart() {
+    echo ""
+    echo "================================================="
+    echo " Starting MPU-6050 Chart Generation (Motion)"
+    echo "================================================="
+    $PYTHON_EXECUTABLE $MPU_PLOTTER_SCRIPT
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "Chart generation successful! File saved to $MPU_CHART_PATH"
     else
         echo ""
         echo "Chart generation failed. Check the error messages above."
@@ -50,23 +67,34 @@ generate_dht_chart() {
 
 # Function to view the generated chart
 view_chart() {
-    if [ ! -f $CHART_PATH ]; then
-        echo "Error: Chart file not found at $CHART_PATH."
-        echo "Please run option 1 first to generate the chart."
+    CHART_TO_VIEW=""
+    read -p "View (D)HT Chart or (M)PU Chart? [D/M]: " view_choice
+    
+    if [[ "$view_choice" == "D" || "$view_choice" == "d" ]]; then
+        CHART_TO_VIEW=$DHT_CHART_PATH
+    elif [[ "$view_choice" == "M" || "$view_choice" == "m" ]]; then
+        CHART_TO_VIEW=$MPU_CHART_PATH
+    else
+        echo "Invalid choice."
         return
     fi
     
-    echo "Opening $CHART_PATH..."
+    if [ ! -f "$CHART_TO_VIEW" ]; then
+        echo "Error: Chart file not found at $CHART_TO_VIEW."
+        echo "Please run the appropriate generation option first."
+        return
+    fi
     
-    # Use 'open' on macOS/Windows Subsystem for Linux (WSL), 'xdg-open' on most Linux distributions
-    # This command attempts to open the file with the default viewer.
+    echo "Opening $CHART_TO_VIEW..."
+    
+    # Use 'open' on macOS/WSL, 'xdg-open' on most Linux distributions
     if command -v xdg-open &> /dev/null; then
-        xdg-open $CHART_PATH
+        xdg-open "$CHART_TO_VIEW"
     elif command -v open &> /dev/null; then
-        open $CHART_PATH
+        open "$CHART_TO_VIEW"
     else
         echo "Warning: Could not find 'xdg-open' or 'open' command."
-        echo "Please open the file manually: $CHART_PATH"
+        echo "Please open the file manually: $CHART_TO_VIEW"
     fi
 }
 
@@ -76,9 +104,10 @@ show_menu() {
     echo "================================================="
     echo " KABOT-1 MISSION CONTROL (Post-Flight Analysis)"
     echo "================================================="
-    echo " 1) Generate Final DHT Chart (Runs $PLOTTER_SCRIPT)"
-    echo " 2) View Last Generated Chart ($CHART_PATH)"
-    echo " 3) Exit Mission Control"
+    echo " 1) Generate Final DHT Chart (Temp/Hum)"
+    echo " 2) Generate Final MPU-6050 Chart (Motion)"
+    echo " 3) View Last Generated Chart"
+    echo " 4) Exit Mission Control"
     echo "================================================="
 }
 
@@ -87,11 +116,12 @@ check_dependencies
 
 while true; do
     show_menu
-    read -p "Enter choice [1-3]: " choice
+    read -p "Enter choice [1-4]: " choice
     case $choice in
         1) generate_dht_chart ;;
-        2) view_chart ;;
-        3) echo "Exiting. Good luck with your analysis!" ; exit 0 ;;
+        2) generate_mpu_chart ;;
+        3) view_chart ;;
+        4) echo "Exiting. Good luck with your analysis!" ; exit 0 ;;
         *) echo "Invalid option. Please try again." ;;
     esac
     echo ""
