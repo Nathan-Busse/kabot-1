@@ -2,14 +2,6 @@
 # The Kabot-1 Mission: High-Altitude Environmental Data Logger
 # (Flight-Ready Version - Optimized for Low RAM/CPU)
 # =========================================================================
-# This script is a core component of the Kabot I mission, designed to
-# validate the payload's ability to accurately log environmental data.
-#
-# Primary Objective: Continuously and reliably log temperature and humidity
-# data to file while conserving the Raspberry Pi's RAM for essential flight
-# operations. All data visualization is deferred to a separate, post-flight
-# analysis script run on a more powerful machine.
-# =========================================================================
 
 import Adafruit_DHT
 import time
@@ -22,10 +14,13 @@ DHT_SENSOR = Adafruit_DHT.DHT11
 # The pin is set to GPIO4 (GPCLK0) for improved accuracy
 DHT_PIN = 4 
 
-# Directory for data files
+# Directory for data files (Relative to src/logger/)
 DATA_DIR = "data"
 DATA_FILE = os.path.join(DATA_DIR, "DHT11.txt")
 DATA_BACKUP_FILE = os.path.join(DATA_DIR, "DHT11_backup.txt")
+
+# Directory for charts (Relative to src/logger/, points to src/charts)
+CHARTS_DIR = "../charts"
 
 # Store the start time of the script to calculate total runtime
 SCRIPT_START_TIME = datetime.now()
@@ -34,6 +29,9 @@ def main():
     """Main function to run the sensor logging loop."""
     print(f"Ensuring data directory '{DATA_DIR}' exists...")
     os.makedirs(DATA_DIR, exist_ok=True)
+    
+    # NOTE: The charts directory creation is removed here as it's not strictly needed 
+    # for a logger script that doesn't generate charts, further conserving resources.
     
     if not os.path.exists(DATA_FILE):
         print(f"Data file not found. Creating {DATA_FILE}...")
@@ -84,7 +82,7 @@ def main_loop():
         print(f"Script started at: {SCRIPT_START_TIME.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Script ended at: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"Total runtime: {duration}")
-        print("Data is saved in the 'data' directory. Run 'generate_kabot_chart.py' for analysis.")
+        print("Data is saved in the 'data' directory. Run 'dht_plotter.py' for analysis.")
 
 
 if __name__ == "__main__":
