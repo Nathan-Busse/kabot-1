@@ -1,5 +1,5 @@
 # =========================================================================
-# Kabot-1 Mission Control and Post-Flight Data Analysis Launcher
+# Kabot-1 Blackbox Analyzer (Post-Flight Data Analysis Launcher)
 # =========================================================================
 # This script provides a simple menu interface for managing post-flight
 # tasks, specifically running the resource-intensive data plotting scripts
@@ -102,12 +102,12 @@ view_chart() {
 show_menu() {
     clear
     echo "================================================="
-    echo " KABOT-1 MISSION CONTROL (Post-Flight Analysis)"
+    echo " KABOT-1 BLACKBOX ANALYZER (Post-Flight Analysis)"
     echo "================================================="
     echo " 1) Generate Final DHT Chart (Temp/Hum)"
     echo " 2) Generate Final MPU-6050 Chart (Motion)"
     echo " 3) View Last Generated Chart"
-    echo " 4) Exit Mission Control"
+    echo " 4) Exit Blackbox Analyzer"
     echo "================================================="
 }
 
