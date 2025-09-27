@@ -12,6 +12,7 @@
     .card { border-radius: 8px; padding: 16px; }
     img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; }
     a { color: #8cc9ff; }
+    button, input[type=range] { margin: 4px; }
   </style>
 </head>
 <body>
@@ -70,10 +71,23 @@
         <li><a href="/static/data/sound.txt">Sound Log</a></li>
       </ul>
     </section>
+
+    <!-- Replay Panel -->
+    <section class="card" style="background:#161a20;">
+      <h2>Replay Mode</h2>
+      <div>
+        <button onclick="startReplay()">▶ Play</button>
+        <button onclick="pauseReplay()">⏸ Pause</button>
+        <button onclick="stepReplay()">⏭ Step</button>
+        <label>Speed: <input type="range" id="speedSlider" min="0.2" max="5" step="0.2" value="1" oninput="updateSpeed(this.value)"> <span id="speedLabel">1×</span></label>
+      </div>
+      <pre id="replay_output" style="text-align:left; background:#0f1115; padding:8px; border-radius:6px; max-height:200px; overflow-y:auto;"></pre>
+    </section>
+
   </main>
 
   <script>
-    // Refresh charts every 10s
+    // Chart auto-refresh
     function refresh(id, path) {
       const el = document.getElementById(id);
       el.src = path + "?ts=" + Date.now();
@@ -83,6 +97,64 @@
       refresh("mpu_chart", "/chart/mpu_chart.svg");
       refresh("sound_chart", "/chart/sound_chart.svg");
     }, 10000);
+
+    // Replay logic
+    let replayData = {};
+    let replayIndex = 0;
+    let replayTimer = null;
+    let replaySpeed = 1000; // ms per step
+
+    async function loadReplay() {
+      const res = await fetch("/api/logs");
+      replayData = await res.json();
+      replayIndex = 0;
+      document.getElementById("replay_output").textContent =
+        "Loaded logs: " + Object.keys(replayData).join(", ");
+    }
+
+    function renderReplayLine() {
+      const out = document.getElementById("replay_output");
+      let lines = [];
+      for (const sensor in replayData) {
+        if (replayIndex < replayData[sensor].length) {
+          lines.push(sensor + ": " + replayData[sensor][replayIndex]);
+        }
+      }
+      if (lines.length > 0) {
+        out.textContent += "\n" + lines.join(" | ");
+        out.scrollTop = out.scrollHeight;
+        replayIndex++;
+      } else {
+        pauseReplay();
+      }
+    }
+
+    function startReplay() {
+      if (!replayTimer) {
+        replayTimer = setInterval(renderReplayLine, replaySpeed);
+      }
+    }
+
+    function pauseReplay() {
+      clearInterval(replayTimer);
+      replayTimer = null;
+    }
+
+    function stepReplay() {
+      renderReplayLine();
+    }
+
+    function updateSpeed(val) {
+      replaySpeed = 1000 / val; // higher val = faster
+      document.getElementById("speedLabel").textContent = val + "×";
+      if (replayTimer) {
+        pauseReplay();
+        startReplay();
+      }
+    }
+
+    // Load logs on page load
+    loadReplay();
   </script>
 </body>
 </html>
