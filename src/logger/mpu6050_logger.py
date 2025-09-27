@@ -1,120 +1,140 @@
 # =========================================================================
-# Kabot-1 Mission: MPU-6050 Motion Logger
-# (Flight-Ready Version - Optimized for Minimal RAM Usage)
+# Kabot-1 Mission: MPU-6050 Motion Logger (Live Data Stream Enabled)
 # =========================================================================
-# Primary Objective: Continuously sample and log accelerometer and gyroscope 
-# data to analyze flight dynamics, spin rates, and external forces.
-# This version uses memory-safe file handling (append mode) to prevent 
-# excessive RAM consumption during long missions.
+# Primary Objective: Continuously sample and log motion data.
+# Secondary Objective: Update a central JSON file for the real-time web UI.
 # =========================================================================
 
 import time
 import os
 from datetime import datetime
+import json 
+import random
 
 # --- Configuration Settings ---
+FLIGHT_MODE = True 
 DATA_DIR = "data"
 LOG_FILE = os.path.join(DATA_DIR, "MPU6050.txt")
-LOG_BACKUP_FILE = os.path.join(DATA_DIR, "MPU6050_backup.txt")
 
-# Logging interval in seconds
-LOG_INTERVAL = 1
+# Central file for real-time monitoring dashboard
+LIVE_DATA_FILE = os.path.join(DATA_DIR, "LATEST_SENSOR_DATA.json")
 
-# Attempt to import MPU6050 library AND supporting dependencies
+LOG_INTERVAL = 1 # Log motion data more frequently than temp/humidity
+
+# --- MPU/MOCK SENSOR SETUP ---
 try:
-    # Attempt to import NumPy for realistic mock data generation
     import numpy as np
     
-    # Placeholder for the actual sensor initialization
     class MockMPU6050:
-        """Mocks MPU6050 sensor data for simulation purposes using NumPy."""
         def get_accel_data(self):
-            # Simulate slight turbulence and gravity offset
             t = time.time() * 0.1
+            # Mock Z-Accel centered around 1.0g
             return {
-                'x': 0.15 + 0.05 * (np.sin(t) + np.random.randn() * 0.01),
-                'y': -0.20 + 0.05 * (np.cos(t) + np.random.randn() * 0.01),
-                'z': 1.18 + 0.05 * (np.sin(t*0.5) + np.random.randn() * 0.01)
+                'x': 0.15 + random.uniform(-0.02, 0.02),
+                'y': -0.20 + random.uniform(-0.02, 0.02),
+                'z': 1.0 + 0.1 * np.sin(t*0.5) + random.uniform(-0.02, 0.02)
             }
-
         def get_gyro_data(self):
-            # Simulate slow rotation/drift
+            # Mock X-Gyro (Roll Rate) fluctuation
             return {
-                'x': -6.5 + np.random.randn() * 0.1,
-                'y': 6.3 + np.random.randn() * 0.1,
-                'z': 0.1 + np.random.randn() * 0.1
+                'x': 5.0 * np.cos(time.time() * 0.2) + random.uniform(-0.5, 0.5),
+                'y': 6.3 + random.uniform(-0.1, 0.1),
+                'z': 0.1 + random.uniform(-0.1, 0.1)
             }
-
     sensor = MockMPU6050()
-    HAS_MPU_SENSOR = True
-    print("MPU-6050 Logger running in Mock Simulation Mode (with NumPy).")
+    if not FLIGHT_MODE:
+        print("MPU-6050 Logger running in Mock Simulation Mode (with NumPy).")
 
-except ImportError as e:
-    # This block runs if EITHER the MPU6050 library or NumPy is missing.
-    # It falls back to a simple mock that uses no external dependencies.
-    print(f"WARNING: Required dependencies not found ({e}). Running in simple simulation mode.")
-    
+except ImportError:
+    if not FLIGHT_MODE:
+        print("WARNING: NumPy not found. Running in simple simulation mode.")
     class SimpleMockMPU6050:
-        """Simple mock class that uses only standard library functions."""
         def get_accel_data(self):
-            return {'x': 0.17, 'y': -0.20, 'z': 1.18}
+            return {'x': 0.17, 'y': -0.20, 'z': 1.0}
         def get_gyro_data(self):
-            return {'x': -6.5, 'y': 6.3, 'z': 0.1}
-
+            return {'x': 0.0, 'y': 0.0, 'z': 0.0}
     sensor = SimpleMockMPU6050()
-    HAS_MPU_SENSOR = False
+
+
+def write_live_data(data):
+    """
+    Reads the existing live data file, updates the MPU metrics, and writes 
+    the complete data structure back.
+    """
+    full_data = {}
+    
+    # 1. Attempt to read existing data
+    if os.path.exists(LIVE_DATA_FILE):
+        try:
+            with open(LIVE_DATA_FILE, 'r') as f:
+                full_data = json.load(f)
+        except Exception:
+            pass # Ignore read errors
+
+    # 2. Update the specific MPU fields
+    full_data.update({
+        "timestamp": data["timestamp"],
+        "accel_z": data["accel_z"],
+        "gyro_x": data["gyro_x"],
+    })
+
+    # 3. Overwrite the file with the complete, updated data structure
+    try:
+        with open(LIVE_DATA_FILE, 'w') as f:
+            json.dump(full_data, f, indent=4)
+    except Exception as e:
+        if not FLIGHT_MODE:
+            print(f"Error writing live data JSON: {e}")
 
 
 def initialize_log_file():
-    """
-    Ensures the data directory exists and the log file is created with a header.
-    It performs a one-time check, making this a memory-safe operation.
-    """
+    """Ensures the data directory exists and the log file is created with a header."""
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(LOG_FILE):
-        print(f"Creating MPU-6050 Log file: {LOG_FILE}")
+        if not FLIGHT_MODE:
+            print(f"Creating MPU-6050 Log file: {LOG_FILE}")
         try:
-            # Note: We do not back up the log file here as it is only created once.
             with open(LOG_FILE, "w") as f:
                 header = "timestamp,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z\n"
                 f.write(header)
         except Exception as e:
-            print(f"Error creating log file: {e}")
+            if not FLIGHT_MODE:
+                print(f"Error creating log file: {e}")
             return False
     return True
 
 def log_data_point():
-    """
-    Reads MPU-6050 data, formats it, and APPENDS it to the log file.
-    
-    CRITICAL: This function opens the file in append mode ('a'), writes one line,
-    and immediately closes the file. This prevents RAM usage from ballooning.
-    """
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Reads MPU-6050 data, formats it, and APPENDS it to the log file and updates the JSON stream."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
 
     try:
         accel_data = sensor.get_accel_data()
         gyro_data = sensor.get_gyro_data()
         
-        # Format the data into a single CSV line
+        # --- 1. CSV Log (Memory-Safe Append) ---
         data_line = (
             f"{timestamp},"
             f"{accel_data['x']:.2f},{accel_data['y']:.2f},{accel_data['z']:.2f},"
             f"{gyro_data['x']:.2f},{gyro_data['y']:.2f},{gyro_data['z']:.2f}\n"
         )
-        
-        # === Memory-Safe File Append Operation ===
         with open(LOG_FILE, "a") as f:
             f.write(data_line)
         
-        # Display feedback (use '\r' to overwrite the line in the terminal)
-        # We assume FLIGHT_MODE is handled by external runner (e.g., nohup) or an environment variable check.
-        # For development display, this line is useful:
-        print(f"\rLogged: {timestamp} | Accel X:{accel_data['x']:.2f} g | Gyro Z:{gyro_data['z']:.2f} d/s", end="", flush=True)
+        # --- 2. JSON Live Data Update ---
+        data_point = {
+            "timestamp": timestamp,
+            # We focus on Z (vertical acceleration) and X (roll rate) for the dashboard
+            "accel_z": round(accel_data['z'], 2), 
+            "gyro_x": round(gyro_data['x'], 2),
+        }
+        write_live_data(data_point)
+        
+        if not FLIGHT_MODE:
+            print(f"\rLogged: {timestamp} | Accel Z:{accel_data['z']:.2f} g | Gyro X:{gyro_data['x']:.2f} d/s", end="", flush=True)
 
     except Exception as e:
-        # Silently fail or log to stderr during flight. For development, print the error.
-        print(f"\rError logging MPU-6050 data: {e}        ", end="", flush=True)
+        if not FLIGHT_MODE:
+            print(f"\rError logging MPU-6050 data: {e}        ", end="", flush=True)
 
 
 def main_loop():
@@ -123,18 +143,19 @@ def main_loop():
         if not initialize_log_file():
             return
             
-        print("\nMPU-6050 Logger is active. Press Ctrl+C to stop.")
+        if not FLIGHT_MODE:
+            print("\nMPU-6050 Logger is active. Press Ctrl+C to stop.")
         
-        # === Core mission loop for continuous data collection ===
         while True:
             log_data_point()
             time.sleep(LOG_INTERVAL)
             
     except KeyboardInterrupt:
-        print("\n\nMPU-6050 logging terminated.")
-        print(f"Data saved to {LOG_FILE}.")
+        if not FLIGHT_MODE:
+            print("\n\nMPU-6050 logging terminated.")
     except Exception as e:
-        print(f"\nAn unexpected error occurred during main loop: {e}")
+        if not FLIGHT_MODE:
+            print(f"\nAn unexpected error occurred during main loop: {e}")
 
 if __name__ == "__main__":
     main_loop()
