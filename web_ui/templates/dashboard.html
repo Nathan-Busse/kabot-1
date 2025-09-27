@@ -1,27 +1,53 @@
-<section class="card" style="background:#161a20;">
-  <h2>Blackbox Analyzer</h2>
-  <button onclick="runBlackbox('dht')">Generate DHT Chart</button>
-  <button onclick="runBlackbox('mpu')">Generate MPU6050 Chart</button>
-  <button onclick="runBlackbox('sound')">Generate Sound Chart</button>
-  <pre id="blackbox_status"></pre>
-</section>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kabot-1 HAB Mission Console</title>
+  <style>
+    body { background:#0d1117; color:#c9d1d9; font-family:sans-serif; }
+    .card { padding:1em; margin:1em; border:1px solid #30363d; border-radius:6px; }
+    button { margin:0.2em; padding:0.5em 1em; background:#238636; color:white; border:none; border-radius:4px; }
+    button:hover { background:#2ea043; }
+  </style>
+</head>
+<body>
+  <h1>Kabot-1 HAB Mission Console</h1>
 
-<script>
-async function runBlackbox(sensor) {
-  document.getElementById("blackbox_status").textContent = "Running blackbox for " + sensor + "...";
-  try {
-    const res = await fetch("/blackbox/" + sensor);
-    const data = await res.json();
-    if (data.status === "ok") {
-      document.getElementById("blackbox_status").textContent = "Chart generated: " + data.chart;
-      if (sensor === "dht") refresh("dht_chart", data.chart);
-      if (sensor === "mpu") refresh("mpu_chart", data.chart);
-      if (sensor === "sound") refresh("sound_chart", data.chart);
-    } else {
-      document.getElementById("blackbox_status").textContent = "Error: " + data.message;
+  <!-- Existing sections for logs, replay, charts, etc. -->
+
+  <section class="card" style="background:#161a20;">
+    <h2>Blackbox Analyzer</h2>
+    <button onclick="runBlackbox('dht')">Generate DHT Chart</button>
+    <button onclick="runBlackbox('mpu')">Generate MPU6050 Chart</button>
+    <button onclick="runBlackbox('sound')">Generate Sound Chart</button>
+    <button onclick="runBlackbox('view')">View Last Chart</button>
+    <pre id="blackbox_status" style="margin-top:10px; font-size:14px;"></pre>
+  </section>
+
+  <script>
+  async function runBlackbox(sensor) {
+    document.getElementById("blackbox_status").textContent = "Running blackbox for " + sensor + "...";
+    try {
+      const res = await fetch("/blackbox/" + sensor);
+      const data = await res.json();
+      if (data.status === "ok") {
+        document.getElementById("blackbox_status").textContent = "Done. " + (data.output || "");
+        if (sensor === "dht") refresh("dht_chart", "/chart/dht_chart.svg");
+        if (sensor === "mpu") refresh("mpu_chart", "/chart/mpu_chart.svg");
+        if (sensor === "sound") refresh("sound_chart", "/chart/sound_chart.svg");
+      } else {
+        document.getElementById("blackbox_status").textContent = "Error: " + data.message;
+      }
+    } catch (err) {
+      document.getElementById("blackbox_status").textContent = "Failed: " + err;
     }
-  } catch (err) {
-    document.getElementById("blackbox_status").textContent = "Failed: " + err;
   }
-}
-</script>
+
+  function refresh(id, url) {
+    const img = document.getElementById(id);
+    if (img) {
+      img.src = url + "?t=" + new Date().getTime(); // cache-bust
+    }
+  }
+  </script>
+</body>
+</html>
