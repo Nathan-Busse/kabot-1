@@ -20,15 +20,14 @@ LOG_BACKUP_FILE = os.path.join(DATA_DIR, "MPU6050_backup.txt")
 # Logging interval in seconds
 LOG_INTERVAL = 1
 
-# Attempt to import MPU6050 library
+# Attempt to import MPU6050 library AND supporting dependencies
 try:
-    # Assuming the use of a simple library for I2C access
-    # from mpu6050 import MPU6050 
-    # sensor = MPU6050(0x68) # Assuming default address
+    # Attempt to import NumPy for realistic mock data generation
+    import numpy as np
     
     # Placeholder for the actual sensor initialization
     class MockMPU6050:
-        """Mocks MPU6050 sensor data for simulation purposes."""
+        """Mocks MPU6050 sensor data for simulation purposes using NumPy."""
         def get_accel_data(self):
             # Simulate slight turbulence and gravity offset
             t = time.time() * 0.1
@@ -47,16 +46,16 @@ try:
             }
 
     sensor = MockMPU6050()
-    import numpy as np # Used by MockMPU6050
     HAS_MPU_SENSOR = True
-    print("MPU-6050 Logger running in Mock Simulation Mode.")
+    print("MPU-6050 Logger running in Mock Simulation Mode (with NumPy).")
 
-except ImportError:
-    # This block runs if the MPU6050 library is not installed
-    print("WARNING: MPU6050 library not found. Running in simulation mode without dynamic data.")
+except ImportError as e:
+    # This block runs if EITHER the MPU6050 library or NumPy is missing.
+    # It falls back to a simple mock that uses no external dependencies.
+    print(f"WARNING: Required dependencies not found ({e}). Running in simple simulation mode.")
     
-    # Simple fallback Mock class without dependencies
     class SimpleMockMPU6050:
+        """Simple mock class that uses only standard library functions."""
         def get_accel_data(self):
             return {'x': 0.17, 'y': -0.20, 'z': 1.18}
         def get_gyro_data(self):
@@ -75,6 +74,7 @@ def initialize_log_file():
     if not os.path.exists(LOG_FILE):
         print(f"Creating MPU-6050 Log file: {LOG_FILE}")
         try:
+            # Note: We do not back up the log file here as it is only created once.
             with open(LOG_FILE, "w") as f:
                 header = "timestamp,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z\n"
                 f.write(header)
@@ -108,9 +108,12 @@ def log_data_point():
             f.write(data_line)
         
         # Display feedback (use '\r' to overwrite the line in the terminal)
+        # We assume FLIGHT_MODE is handled by external runner (e.g., nohup) or an environment variable check.
+        # For development display, this line is useful:
         print(f"\rLogged: {timestamp} | Accel X:{accel_data['x']:.2f} g | Gyro Z:{gyro_data['z']:.2f} d/s", end="", flush=True)
 
     except Exception as e:
+        # Silently fail or log to stderr during flight. For development, print the error.
         print(f"\rError logging MPU-6050 data: {e}        ", end="", flush=True)
 
 
@@ -131,7 +134,7 @@ def main_loop():
         print("\n\nMPU-6050 logging terminated.")
         print(f"Data saved to {LOG_FILE}.")
     except Exception as e:
-        print(f"\nAn error occurred during main loop: {e}")
+        print(f"\nAn unexpected error occurred during main loop: {e}")
 
 if __name__ == "__main__":
     main_loop()
