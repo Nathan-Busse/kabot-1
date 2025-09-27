@@ -10,9 +10,18 @@
     h1 { margin: 0; font-size: 20px; color: #61dafb; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 16px; }
     .card { border-radius: 8px; padding: 16px; }
-    img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; }
+    img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; display:block; }
     a { color: #8cc9ff; }
     button, input[type=range] { margin: 4px; }
+    .chart-container { position: relative; }
+    .marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #ffeb3b;
+      left: 0;
+    }
   </style>
 </head>
 <body>
@@ -31,7 +40,10 @@
         {% else %}#161a20{% endif %};">
       <h2>DHT11 (Temp & Humidity)</h2>
       <p><strong>Latest:</strong> {{ dht_last }}</p>
-      <img id="dht_chart" src="/chart/dht_chart.svg" alt="DHT11 Chart">
+      <div class="chart-container">
+        <img id="dht_chart" src="/chart/dht_chart.svg" alt="DHT11 Chart">
+        <div id="dht_marker" class="marker"></div>
+      </div>
     </section>
 
     <!-- MPU6050 Panel -->
@@ -47,7 +59,10 @@
         {% else %}#161a20{% endif %};">
       <h2>MPU6050 (IMU)</h2>
       <p><strong>Latest:</strong> {{ mpu_last }}</p>
-      <img id="mpu_chart" src="/chart/mpu_chart.svg" alt="MPU6050 Chart">
+      <div class="chart-container">
+        <img id="mpu_chart" src="/chart/mpu_chart.svg" alt="MPU6050 Chart">
+        <div id="mpu_marker" class="marker"></div>
+      </div>
     </section>
 
     <!-- Sound Panel -->
@@ -59,7 +74,10 @@
         {% else %}#161a20{% endif %};">
       <h2>Sound Logger</h2>
       <p><strong>Latest:</strong> {{ sound_last }}</p>
-      <img id="sound_chart" src="/chart/sound_chart.svg" alt="Sound Chart">
+      <div class="chart-container">
+        <img id="sound_chart" src="/chart/sound_chart.svg" alt="Sound Chart">
+        <div id="sound_marker" class="marker"></div>
+      </div>
     </section>
 
     <!-- Logs Panel -->
@@ -124,6 +142,7 @@
         out.textContent += "\n" + lines.join(" | ");
         out.scrollTop = out.scrollHeight;
         replayIndex++;
+        updateMarkers();
       } else {
         pauseReplay();
       }
@@ -151,6 +170,15 @@
         pauseReplay();
         startReplay();
       }
+    }
+
+    function updateMarkers() {
+      const maxLen = Math.max(...Object.values(replayData).map(arr => arr.length));
+      const progress = replayIndex / maxLen;
+      const percent = Math.min(progress * 100, 100);
+      document.getElementById("dht_marker").style.left = percent + "%";
+      document.getElementById("mpu_marker").style.left = percent + "%";
+      document.getElementById("sound_marker").style.left = percent + "%";
     }
 
     // Load logs on page load
