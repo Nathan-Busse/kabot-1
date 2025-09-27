@@ -1,8 +1,9 @@
 # =========================================================================
 # Kabot I Mission Master Launcher (main.py)
 # =========================================================================
-# This script launches all logger processes and the Flask web server 
-# concurrently and silently in the background.
+# This script launches all logger processes concurrently and silently
+# in the background. The Web UI is now managed separately by systemd
+# and is always available regardless of flight controller state.
 #
 # EXECUTION: python3 main.py
 #
@@ -25,11 +26,9 @@ PROCESSES = [
     # 2. MPU-6050 Motion Logger (Logs to CSV and JSON)
     ("MPU Logger", "src/logger/mpu6050_logger.py"),
     
-    # 3. Sound Logger (Placeholder - assumes this script is ready)
+    # 3. Sound Logger (Logs to CSV and JSON)
     ("Sound Logger", "src/logger/sound_logger.py"),
-    
-    # 4. Web UI Server (Starts Flask server, reads from logger JSON files)
-    ("Web Server", "web_ui/app_server.py"),
+    # Web UI removed: now managed by systemd as kabot-web.service
 ]
 
 def launch_processes():
@@ -38,7 +37,7 @@ def launch_processes():
     running_processes = []
     
     print("--- Kabot I Mission Control Startup ---")
-    print(f"Launching {len(PROCESSES)} critical processes...")
+    print(f"Launching {len(PROCESSES)} logger processes...")
 
     # Redirect all stdout/stderr output from subprocesses to null to prevent 
     # terminal artifacts from corrupting logs or memory.
@@ -53,9 +52,8 @@ def launch_processes():
             process = subprocess.Popen(
                 command, 
                 stdout=DEVNULL, # Silence all output
-                stderr=DEVNULL, # Silence all errors (errors are logged internally by loggers if FLIGHT_MODE=False)
-                # Run from the project root directory
-                cwd=os.path.dirname(os.path.abspath(__file__))
+                stderr=DEVNULL, # Silence all errors
+                cwd=os.path.dirname(os.path.abspath(__file__)) # Run from project root
             )
             
             running_processes.append((name, process))
@@ -71,17 +69,18 @@ def launch_processes():
     print("\n--- System Status ---")
     
     if running_processes:
-        print("All processes launched successfully.")
-        print("Logging and Web UI are active in the background.")
-        print("Web Dashboard: Access http://<Pi_IP_Address>:5000")
+        print("All loggers launched successfully.")
+        print("Web Dashboard is running separately as a systemd service.")
+        print("Access it at: http://<Pi_IP_Address>:5000")
         
         # Keep the main launcher script running to monitor status and prevent 
         # the terminal session from exiting immediately.
-        monitor_processes(running_processes)
+        monitor_processes(running_processes, DEVNULL)
     else:
         print("No processes were launched. Mission aborted.")
+        DEVNULL.close()
 
-def monitor_processes(processes):
+def monitor_processes(processes, devnull_handle):
     """Monitors the launched processes and cleans up on keyboard interrupt."""
     try:
         while True:
@@ -89,7 +88,7 @@ def monitor_processes(processes):
             for name, proc in processes:
                 if proc.poll() is not None: # poll returns exit code if process terminated
                     print(f"\n[ALERT] Process '{name}' (PID: {proc.pid}) has terminated unexpectedly!")
-                    # You could re-launch here, but for a simple mission, an alert is enough.
+                    # You could re-launch here if desired.
                     
             time.sleep(5) # Check status every 5 seconds
             
@@ -106,8 +105,7 @@ def monitor_processes(processes):
                     print(f"[ERROR] Could not terminate {name}: {e}")
 
         print("\nMission components safely shut down. Data logging is complete.")
-        DEVNULL.close()
+        devnull_handle.close()
 
 if __name__ == "__main__":
     launch_processes()
-
