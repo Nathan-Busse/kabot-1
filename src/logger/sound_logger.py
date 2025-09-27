@@ -1,6 +1,6 @@
 import os
 import time
-import zerogpio
+import gpiozero
 import matplotlib.pyplot as plt
 from datetime import datetime
 import shutil
