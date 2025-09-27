@@ -8,7 +8,7 @@
     body { font-family: system-ui, Arial; background: #0f1115; color: #eaeef3; margin: 0; }
     header { padding: 16px 24px; border-bottom: 1px solid #1b1f24; background: #12151b; }
     h1 { margin: 0; font-size: 20px; color: #61dafb; }
-    .grid { display: grid; gap: 16px; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 16px; }
     .card { background: #161a20; border: 1px solid #202531; border-radius: 8px; padding: 16px; }
     img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; }
     a { color: #8cc9ff; }
@@ -17,32 +17,48 @@
 <body>
   <header><h1>Kabot‑1 HAB Mission Console</h1></header>
   <main class="grid">
+    <!-- DHT11 Panel -->
     <section class="card">
-      <h2>Latest Sensor Data</h2>
-      <p><strong>DHT11:</strong> {{ dht_last }}</p>
-      <p><strong>MPU6050:</strong> {{ mpu_last }}</p>
+      <h2>DHT11 (Temp & Humidity)</h2>
+      <p><strong>Latest:</strong> {{ dht_last }}</p>
+      <img id="dht_chart" src="/chart/dht_chart.svg" alt="DHT11 Chart">
     </section>
 
+    <!-- MPU6050 Panel -->
     <section class="card">
-      <h2>Telemetry Chart</h2>
-      <img id="chart" src="/chart/chart.svg" alt="Telemetry chart">
+      <h2>MPU6050 (IMU)</h2>
+      <p><strong>Latest:</strong> {{ mpu_last }}</p>
+      <img id="mpu_chart" src="/chart/mpu_chart.svg" alt="MPU6050 Chart">
     </section>
 
+    <!-- Sound Panel -->
+    <section class="card">
+      <h2>Sound Logger</h2>
+      <p><strong>Latest:</strong> {{ sound_last }}</p>
+      <img id="sound_chart" src="/chart/sound_chart.svg" alt="Sound Chart">
+    </section>
+
+    <!-- Logs Panel -->
     <section class="card">
       <h2>Logs</h2>
       <ul>
-        <li><a href="/chart/chart_backup.svg">Backup Chart</a></li>
         <li><a href="/static/data/DHT11.txt">DHT11 Log</a></li>
         <li><a href="/static/data/MPU6050.txt">MPU6050 Log</a></li>
+        <li><a href="/static/data/sound.txt">Sound Log</a></li>
       </ul>
     </section>
   </main>
 
   <script>
-    // Refresh chart every 10s
+    // Refresh charts every 10s
+    function refresh(id, path) {
+      const el = document.getElementById(id);
+      el.src = path + "?ts=" + Date.now();
+    }
     setInterval(() => {
-      const el = document.getElementById("chart");
-      el.src = "/chart/chart.svg?ts=" + Date.now();
+      refresh("dht_chart", "/chart/dht_chart.svg");
+      refresh("mpu_chart", "/chart/mpu_chart.svg");
+      refresh("sound_chart", "/chart/sound_chart.svg");
     }, 10000);
   </script>
 </body>
