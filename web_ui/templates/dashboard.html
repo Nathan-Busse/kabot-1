@@ -12,8 +12,6 @@
 <body>
   <h1>Kabot-1 HAB Mission Console</h1>
 
-  <!-- Existing sections for logs, replay, charts, etc. -->
-
   <section class="card" style="background:#161a20;">
     <h2>Blackbox Analyzer</h2>
     <button onclick="runBlackbox('dht')">Generate DHT Chart</button>
@@ -23,6 +21,13 @@
     <pre id="blackbox_status" style="margin-top:10px; font-size:14px;"></pre>
   </section>
 
+  <section class="card">
+    <h2>Charts</h2>
+    <img id="dht_chart" src="/chart/dht_chart.svg" alt="DHT Chart" width="400">
+    <img id="mpu_chart" src="/chart/mpu_chart.svg" alt="MPU Chart" width="400">
+    <img id="sound_chart" src="/chart/sound_chart.svg" alt="Sound Chart" width="400">
+  </section>
+
   <script>
   async function runBlackbox(sensor) {
     document.getElementById("blackbox_status").textContent = "Running blackbox for " + sensor + "...";
@@ -30,7 +35,7 @@
       const res = await fetch("/blackbox/" + sensor);
       const data = await res.json();
       if (data.status === "ok") {
-        document.getElementById("blackbox_status").textContent = "Done. " + (data.output || "");
+        document.getElementById("blackbox_status").textContent = "Done.\n" + (data.output || "");
         if (sensor === "dht") refresh("dht_chart", "/chart/dht_chart.svg");
         if (sensor === "mpu") refresh("mpu_chart", "/chart/mpu_chart.svg");
         if (sensor === "sound") refresh("sound_chart", "/chart/sound_chart.svg");
