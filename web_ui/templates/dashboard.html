@@ -9,7 +9,7 @@
     header { padding: 16px 24px; border-bottom: 1px solid #1b1f24; background: #12151b; }
     h1 { margin: 0; font-size: 20px; color: #61dafb; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; padding: 16px; }
-    .card { background: #161a20; border: 1px solid #202531; border-radius: 8px; padding: 16px; }
+    .card { border-radius: 8px; padding: 16px; }
     img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; }
     a { color: #8cc9ff; }
   </style>
@@ -17,29 +17,52 @@
 <body>
   <header><h1>Kabot‑1 HAB Mission Console</h1></header>
   <main class="grid">
+
     <!-- DHT11 Panel -->
-    <section class="card">
+    {% set dht_parts = dht_last.split(",") if dht_last != "No data" else [] %}
+    {% set temp = dht_parts[1]|float if dht_parts|length > 1 else None %}
+    {% set hum = dht_parts[2]|float if dht_parts|length > 2 else None %}
+    <section class="card"
+      style="background:
+        {% if temp is not none and temp > 40 %}#8b0000
+        {% elif temp is not none and temp < 0 %}#003366
+        {% elif hum is not none and (hum < 20 or hum > 80) %}#664400
+        {% else %}#161a20{% endif %};">
       <h2>DHT11 (Temp & Humidity)</h2>
       <p><strong>Latest:</strong> {{ dht_last }}</p>
       <img id="dht_chart" src="/chart/dht_chart.svg" alt="DHT11 Chart">
     </section>
 
     <!-- MPU6050 Panel -->
-    <section class="card">
+    {% set mpu_parts = mpu_last.split(",") if mpu_last != "No data" else [] %}
+    {% set ax = mpu_parts[1]|float if mpu_parts|length > 1 else None %}
+    {% set ay = mpu_parts[2]|float if mpu_parts|length > 2 else None %}
+    {% set az = mpu_parts[3]|float if mpu_parts|length > 3 else None %}
+    {% set accel_mag = (ax**2 + ay**2 + az**2)**0.5 if ax is not none and ay is not none and az is not none else None %}
+    <section class="card"
+      style="background:
+        {% if accel_mag is not none and accel_mag > 20 %}#8b0000
+        {% elif accel_mag is not none and accel_mag < 5 %}#444466
+        {% else %}#161a20{% endif %};">
       <h2>MPU6050 (IMU)</h2>
       <p><strong>Latest:</strong> {{ mpu_last }}</p>
       <img id="mpu_chart" src="/chart/mpu_chart.svg" alt="MPU6050 Chart">
     </section>
 
     <!-- Sound Panel -->
-    <section class="card">
+    {% set sound_val = sound_last.split(",")[1]|float if sound_last != "No data" else None %}
+    <section class="card"
+      style="background:
+        {% if sound_val is not none and sound_val > 80 %}#8b0000
+        {% elif sound_val is not none and sound_val < 20 %}#444466
+        {% else %}#161a20{% endif %};">
       <h2>Sound Logger</h2>
       <p><strong>Latest:</strong> {{ sound_last }}</p>
       <img id="sound_chart" src="/chart/sound_chart.svg" alt="Sound Chart">
     </section>
 
     <!-- Logs Panel -->
-    <section class="card">
+    <section class="card" style="background:#161a20;">
       <h2>Logs</h2>
       <ul>
         <li><a href="/static/data/DHT11.txt">DHT11 Log</a></li>
