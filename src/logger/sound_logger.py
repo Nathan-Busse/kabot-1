@@ -1,74 +1,49 @@
 import os
 import time
-import gpiozero
+import shutil
 import matplotlib.pyplot as plt
 from datetime import datetime
-import shutil
+from gpiozero import LED, Button  # gpiozero abstractions
 
 # --- Hardware Pins ---
-# Keyes KY-038 D0 pin connected to GPIO14
-SOUND_DETECTOR_PIN = 14
-# Piezo Buzzer connected to GPIO4
-BUZZER_PIN = 21
+SOUND_DETECTOR_PIN = 14   # KY-038 D0 → GPIO14
+BUZZER_PIN = 21           # Piezo buzzer → GPIO21
 
 # --- File Paths ---
-DATA_FILE = "sound_data_D0.txt"
-DATA_BACKUP_FILE = "sound_data_D0_backup.txt"
-CHART_FILE = "sound_chart_D0.svg"
-CHART_BACKUP_FILE = "sound_chart_D0_backup.svg"
+DATA_FILE = "src/logger/data/sound.txt"
+DATA_BACKUP_FILE = "src/logger/data/sound_backup.txt"
+CHART_FILE = "src/charts/sound_chart.svg"
+CHART_BACKUP_FILE = "src/charts/sound_chart_backup.svg"
 
-# --- ADC/A0 Code (Commented Out) ---
-# import board
-# import busio
-# import adafruit_ads1x15.ads1115 as ADS
-# from adafruit_ads1x15.analog_in import AnalogIn
-
-# I2C_SDA_PIN = board.D14
-# I2C_SCL_PIN = board.D15
-# i2c = busio.I2C(I2C_SCL_PIN, I2C_SDA_PIN)
-# ads = ADS.ADS1115(i2c)
-# chan = AnalogIn(ads, ADS.P0)
-# A0_DATA_FILE = "sound_data_A0.txt"
-
+# --- GPIO Devices ---
+buzzer = LED(BUZZER_PIN)
+sound_sensor = Button(SOUND_DETECTOR_PIN)
 
 def log_sound_data():
-    # --- Critical file existence and creation check ---
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+
     if not os.path.exists(DATA_FILE):
-        print(f"Data file not found. Creating {DATA_FILE}...")
-        try:
-            with open(DATA_FILE, "w") as f:
-                f.write("timestamp,sound_detected,is_buzzer_on\n")
-        except Exception as e:
-            print(f"Error creating file: {e}")
-            return False
+        with open(DATA_FILE, "w") as f:
+            f.write("timestamp,sound_detected,is_buzzer_on\n")
 
-    # Backup data file
-    if os.path.exists(DATA_FILE):
-        shutil.copyfile(DATA_FILE, DATA_BACKUP_FILE)
-
-    # --- GPIO Setup ---
-    zerogpio.setup(BUZZER_PIN, zerogpio.OUT)
-    zerogpio.setup(SOUND_DETECTOR_PIN, zerogpio.IN)
+    shutil.copyfile(DATA_FILE, DATA_BACKUP_FILE)
 
     # --- Test 1: Buzzer ON ---
-    zerogpio.output(BUZZER_PIN, zerogpio.HIGH)
+    buzzer.on()
     print("Buzzer ON. Logging sound detection...")
-
     for _ in range(5):
-        sound_detected = zerogpio.input(SOUND_DETECTOR_PIN)
+        sound_detected = int(sound_sensor.is_pressed)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(DATA_FILE, "a") as f:
             f.write(f"{timestamp},{sound_detected},1\n")
         time.sleep(1)
-
-    zerogpio.output(BUZZER_PIN, zerogpio.LOW)
+    buzzer.off()
     print("Buzzer OFF.")
 
     # --- Test 2: Ambient Sound (Buzzer OFF) ---
     print("Logging ambient sound detection...")
-
     for _ in range(5):
-        sound_detected = zerogpio.input(SOUND_DETECTOR_PIN)
+        sound_detected = int(sound_sensor.is_pressed)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(DATA_FILE, "a") as f:
             f.write(f"{timestamp},{sound_detected},0\n")
@@ -76,48 +51,47 @@ def log_sound_data():
 
     return True
 
-
 def generate_chart():
+    os.makedirs(os.path.dirname(CHART_FILE), exist_ok=True)
+
     dates, sound_detected_values, buzzer_states = [], [], []
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            next(f)
-            for line in f:
-                try:
-                    timestamp_str, sound_str, buzzer_str = line.strip().split(',')
-                    dates.append(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
-                    sound_detected_values.append(int(sound_str))
-                    buzzer_states.append(int(buzzer_str))
-                except (ValueError, IndexError):
-                    continue
+    with open(DATA_FILE, "r") as f:
+        next(f)  # skip header
+        for line in f:
+            try:
+                ts, sound_str, buzzer_str = line.strip().split(',')
+                dates.append(datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
+                sound_detected_values.append(int(sound_str))
+                buzzer_states.append(int(buzzer_str))
+            except Exception:
+                continue
 
     if not dates:
         return
 
     if os.path.exists(CHART_FILE):
-        os.rename(CHART_FILE, CHART_BACKUP_FILE)
+        os.replace(CHART_FILE, CHART_BACKUP_FILE)
 
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_title("Sound Detection Test (D0 Pin)")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Sound Detected (1=Yes, 0=No)")
 
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Sound Detected (1=Yes, 0=No)')
-    ax.set_title('Sound Detection Test (D0 Pin)')
-    ax.step(dates, sound_detected_values, where='mid', label='Sound Detected')
+    ax.step(dates, sound_detected_values, where="mid", label="Sound Detected")
 
     buzzer_on_dates = [dates[i] for i, state in enumerate(buzzer_states) if state == 1]
     buzzer_on_values = [1.05] * len(buzzer_on_dates)
-    ax.plot(buzzer_on_dates, buzzer_on_values, 'ro', label='Buzzer ON')
+    ax.plot(buzzer_on_dates, buzzer_on_values, "ro", label="Buzzer ON")
 
     ax.set_yticks([0, 1])
-    plt.gcf().autofmt_xdate()
+    fig.autofmt_xdate()
     ax.legend()
     plt.savefig(CHART_FILE)
     plt.close(fig)
-
 
 if __name__ == "__main__":
     while True:
         if log_sound_data():
             generate_chart()
-        time.sleep(1200)
+        time.sleep(1200)  # 20 minutes
