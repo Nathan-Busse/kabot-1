@@ -102,6 +102,35 @@
       <pre id="replay_output" style="text-align:left; background:#0f1115; padding:8px; border-radius:6px; max-height:200px; overflow-y:auto;"></pre>
     </section>
 
+    <section class="card" style="background:#161a20;">
+  <h2>Generate Charts</h2>
+  <button onclick="runPlot('dht')">Generate DHT Chart</button>
+  <button onclick="runPlot('mpu')">Generate MPU Chart</button>
+  <button onclick="runPlot('sound')">Generate Sound Chart</button>
+  <pre id="plot_status" style="margin-top:10px; font-size:14px;"></pre>
+</section>
+
+<script>
+async function runPlot(sensor) {
+  document.getElementById("plot_status").textContent = "Running " + sensor + " plotter...";
+  try {
+    const res = await fetch("/generate/" + sensor);
+    const data = await res.json();
+    if (data.status === "ok") {
+      document.getElementById("plot_status").textContent = "Chart generated: " + data.chart;
+      // Force refresh of the chart image
+      if (sensor === "dht") refresh("dht_chart", data.chart);
+      if (sensor === "mpu") refresh("mpu_chart", data.chart);
+      if (sensor === "sound") refresh("sound_chart", data.chart);
+    } else {
+      document.getElementById("plot_status").textContent = "Error: " + data.message;
+    }
+  } catch (err) {
+    document.getElementById("plot_status").textContent = "Failed: " + err;
+  }
+}
+</script>
+
   </main>
 
   <script>
