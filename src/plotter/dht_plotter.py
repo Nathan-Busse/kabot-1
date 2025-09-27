@@ -20,8 +20,8 @@ DATA_DIR = "src/logger/data"
 DATA_FILE = os.path.join(DATA_DIR, "DHT11.txt")
 # Charts are located at src/charts
 CHARTS_DIR = "src/charts"
-CHART_FILE = os.path.join(CHARTS_DIR, "chart.svg")
-CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "chart_backup.svg")
+CHART_FILE = os.path.join(CHARTS_DIR, "dht_chart.svg")
+CHART_BACKUP_FILE = os.path.join(CHARTS_DIR, "dht_chart_backup.svg")
 
 def generate_chart():
     """Reads all data from the log file and generates the final mission chart."""
