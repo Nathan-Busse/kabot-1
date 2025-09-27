@@ -8,10 +8,9 @@ CHARTS = BASE / "src" / "charts"
 
 app = Flask(__name__, template_folder="templates")
 
-# --- Existing routes ---
+# --- Dashboard ---
 @app.route("/")
 def index():
-    # pass latest log lines into dashboard.html
     def tail(path, n=1):
         try:
             with open(path, "r") as f:
@@ -26,35 +25,35 @@ def index():
         sound_last=tail(DATA / "sound.txt"),
     )
 
+# --- Serve charts ---
 @app.route("/chart/<filename>")
 def chart(filename):
     return send_from_directory(CHARTS, filename)
 
-# --- New generator routes (replace blackbox.sh) ---
-@app.route("/generate/dht")
-def generate_dht():
+# --- Blackbox Analyzer routes ---
+@app.route("/blackbox/dht")
+def blackbox_dht():
     try:
         subprocess.run(["python3", "src/plotter/dht_plotter.py"], check=True)
         return jsonify({"status": "ok", "chart": "/chart/dht_chart.svg"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/generate/mpu")
-def generate_mpu():
+@app.route("/blackbox/mpu")
+def blackbox_mpu():
     try:
         subprocess.run(["python3", "src/plotter/mpu6050_plotter.py"], check=True)
         return jsonify({"status": "ok", "chart": "/chart/mpu_chart.svg"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route("/generate/sound")
-def generate_sound():
+@app.route("/blackbox/sound")
+def blackbox_sound():
     try:
         subprocess.run(["python3", "src/plotter/sound_plotter.py"], check=True)
         return jsonify({"status": "ok", "chart": "/chart/sound_chart.svg"})
     except subprocess.CalledProcessError as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# --- Entrypoint ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
