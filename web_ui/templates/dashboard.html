@@ -110,26 +110,35 @@
   <pre id="plot_status" style="margin-top:10px; font-size:14px;"></pre>
 </section>
 
+<section class="card" style="background:#161a20;">
+  <h2>Blackbox Analyzer</h2>
+  <button onclick="runBlackbox('dht')">Generate DHT Chart</button>
+  <button onclick="runBlackbox('mpu')">Generate MPU6050 Chart</button>
+  <button onclick="runBlackbox('sound')">Generate Sound Chart</button>
+  <pre id="blackbox_status" style="margin-top:10px; font-size:14px;"></pre>
+</section>
+
 <script>
-async function runPlot(sensor) {
-  document.getElementById("plot_status").textContent = "Running " + sensor + " plotter...";
+async function runBlackbox(sensor) {
+  document.getElementById("blackbox_status").textContent = "Running " + sensor + " plotter...";
   try {
-    const res = await fetch("/generate/" + sensor);
+    const res = await fetch("/blackbox/" + sensor);
     const data = await res.json();
     if (data.status === "ok") {
-      document.getElementById("plot_status").textContent = "Chart generated: " + data.chart;
-      // Force refresh of the chart image
+      document.getElementById("blackbox_status").textContent = "Chart generated: " + data.chart;
       if (sensor === "dht") refresh("dht_chart", data.chart);
       if (sensor === "mpu") refresh("mpu_chart", data.chart);
       if (sensor === "sound") refresh("sound_chart", data.chart);
     } else {
-      document.getElementById("plot_status").textContent = "Error: " + data.message;
+      document.getElementById("blackbox_status").textContent = "Error: " + data.message;
     }
   } catch (err) {
-    document.getElementById("plot_status").textContent = "Failed: " + err;
+    document.getElementById("blackbox_status").textContent = "Failed: " + err;
   }
 }
 </script>
+
+    
 
   </main>
 
