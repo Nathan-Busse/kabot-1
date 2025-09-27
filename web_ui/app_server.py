@@ -1,5 +1,32 @@
 from flask import Flask, render_template, send_from_directory, jsonify
 import pathlib
+import subprocess
+from flask import Flask, render_template, jsonify
+
+@app.route("/generate/dht")
+def generate_dht():
+    try:
+        subprocess.run(["python3", "src/plotter/dht_plotter.py"], check=True)
+        return jsonify({"status": "ok", "chart": "/chart/dht_chart.svg"})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/generate/mpu")
+def generate_mpu():
+    try:
+        subprocess.run(["python3", "src/plotter/mpu6050_plotter.py"], check=True)
+        return jsonify({"status": "ok", "chart": "/chart/mpu_chart.svg"})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/generate/sound")
+def generate_sound():
+    try:
+        subprocess.run(["python3", "src/plotter/sound_plotter.py"], check=True)
+        return jsonify({"status": "ok", "chart": "/chart/sound_chart.svg"})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 app = Flask(__name__)
 
