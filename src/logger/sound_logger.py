@@ -94,4 +94,4 @@ if __name__ == "__main__":
     while True:
         if log_sound_data():
             generate_chart()
-        time.sleep(1200)  # 20 minutes
+        time.sleep(0.1)  # 0.1  minutes
