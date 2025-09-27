@@ -1,6 +1,43 @@
 import subprocess
 import pathlib
 from flask import Flask, render_template, jsonify, send_from_directory
+import subprocess
+import pathlib
+from flask import Flask, jsonify
+
+BASE = pathlib.Path(__file__).resolve().parent.parent
+BLACKBOX = BASE / "blackbox.sh"
+
+@app.route("/blackbox/<choice>")
+def run_blackbox(choice):
+    # Map web choices to blackbox menu numbers
+    mapping = {
+        "dht": "1",
+        "mpu": "2",
+        "sound": "3",
+        "view": "4"
+    }
+    opt = mapping.get(choice)
+    if not opt:
+        return jsonify({"status": "error", "message": "Invalid choice"}), 400
+
+    try:
+        result = subprocess.run(
+            [str(BLACKBOX)],
+            input=f"{opt}\n".encode(),
+            cwd=str(BASE),
+            capture_output=True,
+            check=True
+        )
+        return jsonify({
+            "status": "ok",
+            "output": result.stdout.decode()
+        })
+    except subprocess.CalledProcessError as e:
+        return jsonify({
+            "status": "error",
+            "message": e.stderr.decode() or str(e)
+        }), 500
 
 BASE = pathlib.Path(__file__).resolve().parent.parent  # project root
 CHARTS = BASE / "src" / "charts"
