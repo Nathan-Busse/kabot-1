@@ -1,4 +1,3 @@
-<!-- web_ui/templates/dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,10 +8,8 @@
     body { font-family: system-ui, Arial; background: #0f1115; color: #eaeef3; margin: 0; }
     header { padding: 16px 24px; border-bottom: 1px solid #1b1f24; background: #12151b; }
     h1 { margin: 0; font-size: 20px; color: #61dafb; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+    .grid { display: grid; gap: 16px; padding: 16px; }
     .card { background: #161a20; border: 1px solid #202531; border-radius: 8px; padding: 16px; }
-    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px; }
-    .label { color: #8aa4bf; }
     img { max-width: 100%; border-radius: 6px; border: 1px solid #202531; }
     a { color: #8cc9ff; }
   </style>
@@ -21,37 +18,28 @@
   <header><h1>Kabot‑1 HAB Mission Console</h1></header>
   <main class="grid">
     <section class="card">
-      <h2>Latest sensor data</h2>
-      <div class="kv">
-        <div class="label">DHT11 timestamp</div><div>{{ dht.timestamp if dht.timestamp else "—" }}</div>
-        <div class="label">Temperature</div><div>{{ dht.temp if dht.temp is not none else "—" }}</div>
-        <div class="label">Humidity</div><div>{{ dht.humidity if dht.humidity is not none else "—" }}</div>
-
-        <div class="label">MPU6050 timestamp</div><div>{{ mpu.timestamp if mpu.timestamp else "—" }}</div>
-        <div class="label">Accel (ax, ay, az)</div>
-        <div>{{ mpu.ax if mpu.ax is not none else "—" }}, {{ mpu.ay if mpu.ay is not none else "—" }}, {{ mpu.az if mpu.az is not none else "—" }}</div>
-        <div class="label">Gyro (gx, gy, gz)</div>
-        <div>{{ mpu.gx if mpu.gx is not none else "—" }}, {{ mpu.gy if mpu.gy is not none else "—" }}, {{ mpu.gz if mpu.gz is not none else "—" }}</div>
-      </div>
+      <h2>Latest Sensor Data</h2>
+      <p><strong>DHT11:</strong> {{ dht_last }}</p>
+      <p><strong>MPU6050:</strong> {{ mpu_last }}</p>
     </section>
 
     <section class="card">
-      <h2>Telemetry chart</h2>
+      <h2>Telemetry Chart</h2>
       <img id="chart" src="/chart/chart.svg" alt="Telemetry chart">
     </section>
 
     <section class="card">
       <h2>Logs</h2>
       <ul>
-        <li><a href="/chart/chart_backup.svg">Backup chart (SVG)</a></li>
-        <li><a href="/static/data/DHT11.txt">DHT11 log</a></li>
-        <li><a href="/static/data/MPU6050.txt">MPU6050 log</a></li>
+        <li><a href="/chart/chart_backup.svg">Backup Chart</a></li>
+        <li><a href="/static/data/DHT11.txt">DHT11 Log</a></li>
+        <li><a href="/static/data/MPU6050.txt">MPU6050 Log</a></li>
       </ul>
     </section>
   </main>
 
   <script>
-    // Refresh only the chart every 10s (cache-busting)
+    // Refresh chart every 10s
     setInterval(() => {
       const el = document.getElementById("chart");
       el.src = "/chart/chart.svg?ts=" + Date.now();
@@ -59,4 +47,3 @@
   </script>
 </body>
 </html>
-
