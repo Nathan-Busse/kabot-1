@@ -9,7 +9,7 @@ import shutil
 # Keyes KY-038 D0 pin connected to GPIO14
 SOUND_DETECTOR_PIN = 14
 # Piezo Buzzer connected to GPIO4
-BUZZER_PIN = 4
+BUZZER_PIN = 21
 
 # --- File Paths ---
 DATA_FILE = "sound_data_D0.txt"
