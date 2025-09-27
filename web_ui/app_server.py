@@ -51,6 +51,11 @@ def run_blackbox(choice):
             "status": "error",
             "message": e.stderr.decode() or str(e)
         }), 500
+    except FileNotFoundError:
+        return jsonify({
+            "status": "error",
+            "message": f"blackbox.sh not found at {BLACKBOX}"
+        }), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
