@@ -1,5 +1,7 @@
 {
-    "timestamp": "14:32:05",
+    "timestamp": "14:42:10",
     "temp": 25.0,
-    "hum": 48.0
+    "hum": 48.0,
+    "accel_z": 1.07,
+    "gyro_x": 0.09
 }
