@@ -13,7 +13,7 @@ PYTHON_EXECUTABLE="python3"
 
 # Define script and chart paths
 DHT_PLOTTER_SCRIPT="src/plotter/dht_plotter.py"
-MPU_PLOTTER_SCRIPT="src/plotter/mpu_plotter.py"
+MPU_PLOTTER_SCRIPT="src/plotter/mpu6050_plotter.py"
 SOUND_PLOTTER_SCRIPT="src/plotter/sound_plotter.py" # NEW: Sound Plotter Script
 DHT_CHART_PATH="src/charts/chart.svg"
 MPU_CHART_PATH="src/charts/mpu6050_chart.svg"
